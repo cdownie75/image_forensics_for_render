@@ -1,0 +1,23 @@
+{
+  "summary": {
+    "total_images": 2,
+    "flagged_images": 1,
+    "total_tokens_used": 500,
+    "estimated_total_cost_usd": 0.75
+  },
+  "reports": [
+    {
+      "filename": "sample1.jpg",
+      "flagged": true,
+      "tokens_used": 250,
+      "estimated_cost_usd": 0.375,
+      "gpt35_report": "This image appears to show signs of manipulation in the bottom region.",
+      "findings": {}
+    },
+    {
+      "filename": "sample2.jpg",
+      "flagged": false,
+      "findings": {}
+    }
+  ]
+}

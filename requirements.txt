@@ -1,0 +1,6 @@
+Flask
+pytesseract
+Pillow
+opencv-python
+openai
+tiktoken
