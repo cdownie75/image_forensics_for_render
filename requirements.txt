@@ -5,3 +5,5 @@ opencv-python
 tiktoken
 gunicorn
 openai==0.28.1
+celery
+redis
