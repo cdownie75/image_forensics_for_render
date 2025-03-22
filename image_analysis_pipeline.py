@@ -63,7 +63,7 @@ def call_gpt35_forensics(findings):
     prompt = f"""
 You are a digital forensic assistant. Based on the analysis results below, generate a clear and concise report explaining whether the image appears manipulated. 
 
-- Metadata anomalies: {json.dumps(findings['Metadata_Anomalies'], indent=2)}
+- Metadata anomalies: {json.dumps(findings['Metadata_Anomalies'], indent=2, default=str)}
 - Edge detection anomaly: {findings['Edge_Detection_Anomalies']}
 - Histogram inconsistency: {findings['Histogram_Anomalies']}
 - Extracted OCR text: "{findings['Text_Extracted']}"
