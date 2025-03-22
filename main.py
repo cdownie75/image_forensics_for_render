@@ -10,7 +10,149 @@ REPORT_FILE = "forensic_reports.json"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-HTML_UI = """<h1>Image Forensics Dashboard</h1> ... (your UI here) ..."""
+HTML_UI = """
+<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"UTF-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+  <title>Image Forensics UI</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; max-width: 700px; margin: auto; }
+    input[type=\"file\"] { margin-bottom: 1em; }
+    button { margin: 0.5em 0; padding: 0.5em 1em; }
+    .preview img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 6px; }
+    pre { background: #f4f4f4; padding: 1em; border-radius: 5px; overflow-x: auto; }
+    #spinner { display: none; margin-top: 10px; font-style: italic; color: gray; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Image Forensics Dashboard</h1>
+  <input type=\"file\" id=\"imageInput\" accept=\"image/*\">
+  <br>
+  <button onclick=\"uploadImage()\">📤 Upload Image</button>
+  <button onclick=\"runAnalysis()\">🧪 Run Analysis</button>
+  <button onclick=\"fetchReport()\">📄 View Report</button>
+  <button onclick=\"runOCR()\">🔠 Run OCR</button>
+
+  <div id=\"spinner\">⏳ Processing OCR...</div>
+  <div class=\"uploads\" id=\"uploads\"></div>
+  <div class=\"preview\" id=\"preview\"></div>
+  <div class=\"report\" id=\"report\"></div>
+  <button onclick=\"resetDashboard()\">🔄 Reset</button>
+  <button onclick=\"downloadOCR()\">💾 Download OCR Result</button>
+
+  <script>
+    const API_BASE = "";
+    let lastFilename = "";
+    let lastTaskId = "";
+
+    function uploadImage() {
+      const input = document.getElementById("imageInput");
+      if (!input.files.length) return alert("Please select an image");
+
+      const formData = new FormData();
+      formData.append("image", input.files[0]);
+
+      fetch(`${API_BASE}/upload`, { method: "POST", body: formData })
+        .then(res => res.json())
+        .then(data => {
+          lastFilename = data.filename;
+          document.getElementById("preview").innerHTML = `<p>✅ ${data.message}</p><img src='/images/${data.filename}' alt='preview'>`;
+          updateUploadedList(data.filename);
+        })
+        .catch(err => alert("Upload failed"));
+    }
+
+    function updateUploadedList(filename) {
+      const container = document.getElementById("uploads");
+      const entry = document.createElement("p");
+      entry.textContent = `🖼️ ${filename}`;
+      container.appendChild(entry);
+    }
+
+    function runAnalysis() {
+      fetch(`${API_BASE}/analyze`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("preview").innerHTML = `<p>✅ ${data.message}</p>`;
+        })
+        .catch(err => alert("Analysis failed"));
+    }
+
+    function fetchReport() {
+      fetch(`${API_BASE}/report`)
+        .then(res => res.json())
+        .then(data => {
+          const flagged = data.reports.filter(r => r.flagged);
+          document.getElementById("report").innerHTML = `
+            <h2>📄 Report</h2>
+            <pre>${JSON.stringify(flagged, null, 2)}</pre>
+          `;
+        })
+        .catch(err => alert("Could not fetch report"));
+    }
+
+    function runOCR() {
+      if (!lastFilename) return alert("Upload an image first.");
+      document.getElementById("spinner").style.display = "block";
+
+      fetch(`${API_BASE}/ocr`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: lastFilename })
+      })
+        .then(res => res.json())
+        .then(data => {
+          lastTaskId = data.task_id;
+          setTimeout(checkOCRStatus, 3000);
+        });
+    }
+
+    function checkOCRStatus() {
+      if (!lastTaskId) return;
+      fetch(`${API_BASE}/ocr-status/${lastTaskId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            document.getElementById("spinner").style.display = "none";
+            window.latestOCRText = data.result;
+            document.getElementById("report").innerHTML = `<h2>🔠 OCR Result</h2><pre>${data.result}</pre>`;
+          } else if (data.status === "pending") {
+            setTimeout(checkOCRStatus, 3000);
+          } else {
+            document.getElementById("spinner").style.display = "none";
+            document.getElementById("report").innerHTML = `<p>❌ OCR failed: ${data.error || data.status}</p>`;
+          }
+        });
+    }
+
+    function resetDashboard() {
+      document.getElementById("uploads").innerHTML = "";
+      document.getElementById("preview").innerHTML = "";
+      document.getElementById("report").innerHTML = "";
+      lastFilename = "";
+      lastTaskId = "";
+      window.latestOCRText = "";
+    }
+
+    function downloadOCR() {
+      const text = window.latestOCRText;
+      if (!text) return alert("No OCR result to download");
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${lastFilename || 'ocr_result'}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
+"""
 
 @app.route("/")
 def home():
