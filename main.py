@@ -70,6 +70,15 @@ HTML_UI = """
   const img = new Image();
   img.src = `/images/${filename}`;
   img.onload = () => {
+    entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
+    container.appendChild(entry);
+  };
+  img.onerror = () => {
+    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
+    container.appendChild(entry);
+  };
+}`;
+  img.onload = () => {
     entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick="deleteImage('${filename}', this)">🗑 Delete</button>`;
     container.appendChild(entry);
   };
