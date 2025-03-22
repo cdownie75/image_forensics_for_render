@@ -65,9 +65,21 @@ HTML_UI = """
     }
 
     function updateUploadedList(filename) {
-      const container = document.getElementById("uploads");
-      const entry = document.createElement("p");
-      entry.textContent = `🖼️ ${filename}`;
+  const container = document.getElementById("uploads");
+  const entry = document.createElement("div");
+  const img = new Image();
+  img.src = `/images/${filename}`;
+  img.onload = () => {
+    entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
+    container.appendChild(entry);
+  };
+  img.onerror = () => {
+    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
+    container.appendChild(entry);
+  };
+} <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
+  container.appendChild(entry);
+}`;
       container.appendChild(entry);
     }
 
@@ -128,13 +140,13 @@ HTML_UI = """
     }
 
     function resetDashboard() {
-      document.getElementById("uploads").innerHTML = "";
-      document.getElementById("preview").innerHTML = "";
-      document.getElementById("report").innerHTML = "";
-      lastFilename = "";
-      lastTaskId = "";
-      window.latestOCRText = "";
-    }
+  document.getElementById("uploads").innerHTML = "";
+  document.getElementById("preview").innerHTML = "";
+  document.getElementById("report").innerHTML = "";
+  lastFilename = "";
+  lastTaskId = "";
+  window.latestOCRText = "";
+}
 
     function downloadOCR() {
       const text = window.latestOCRText;
@@ -149,7 +161,17 @@ HTML_UI = """
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-  </script>
+  function deleteImage(filename, btn) {
+  fetch(`${API_BASE}/delete-image/${filename}`, { method: "DELETE" })
+    .then(res => res.json())
+    .then(data => {
+      btn.parentElement.remove();
+      document.getElementById("preview").innerHTML = `<p>🗑️ ${data.message}</p>`;
+    })
+    .catch(() => alert("Failed to delete image"));
+}
+
+</script>
 </body>
 </html>
 """
@@ -169,10 +191,38 @@ def upload_image():
 
     path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(path)
+
+    # Resize image to 25% of original size to save memory
+    try:
+        from PIL import Image
+        with Image.open(path) as img:
+            max_dim = 1600
+        if img.width > max_dim or img.height > max_dim:
+            scale = min(max_dim / img.width, max_dim / img.height)
+            new_size = (int(img.width * scale), int(img.height * scale))
+            img = img.resize(new_size)
+            img.save(path)
+    except Exception as e:
+        print(f"Image resizing failed: {e}")
     return jsonify({"message": f"Image '{file.filename}' uploaded successfully.", "filename": file.filename})
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
+    # Resize all images to max 1600px before re-analysis
+    from PIL import Image
+    for filename in os.listdir(UPLOAD_FOLDER):
+        path = os.path.join(UPLOAD_FOLDER, filename)
+        try:
+            with Image.open(path) as img:
+                max_dim = 1600
+                if img.width > max_dim or img.height > max_dim:
+                    scale = min(max_dim / img.width, max_dim / img.height)
+                    new_size = (int(img.width * scale), int(img.height * scale))
+                    img = img.resize(new_size)
+                    img.save(path)
+        except Exception as e:
+            print(f"Resize error for {filename}: {e}")
+
     process_directory(UPLOAD_FOLDER, output_report=REPORT_FILE)
     return jsonify({"message": "Analysis complete.", "report": REPORT_FILE})
 
@@ -208,6 +258,14 @@ def ocr_status(task_id):
         return jsonify({"status": "failure", "error": str(task.info)})
     else:
         return jsonify({"status": task.state})
+
+@app.route("/delete-image/<filename>", methods=["DELETE"])
+def delete_image(filename):
+    path = os.path.join(UPLOAD_FOLDER, filename)
+    if os.path.exists(path):
+        os.remove(path)
+        return jsonify({"message": f"Deleted '{filename}'"})
+    return jsonify({"error": "File not found"}), 404
 
 @app.route("/images/<filename>", methods=["GET"])
 def get_image(filename):
