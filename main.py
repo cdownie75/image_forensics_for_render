@@ -43,169 +43,130 @@ HTML_UI = """
   <button onclick=\"downloadOCR()\">💾 Download OCR Result</button>
 
   <script>
-    const API_BASE = "";
-    let lastFilename = "";
-    let lastTaskId = "";
+  const API_BASE = "";
+  let lastFilename = "";
+  let lastTaskId = "";
 
-    function uploadImage() {
-      const input = document.getElementById("imageInput");
-      if (!input.files.length) return alert("Please select an image");
+  function uploadImage() {
+    const input = document.getElementById("imageInput");
+    if (!input.files.length) return alert("Please select an image");
 
-      const formData = new FormData();
-      formData.append("image", input.files[0]);
+    const formData = new FormData();
+    formData.append("image", input.files[0]);
 
-      fetch(`${API_BASE}/upload`, { method: "POST", body: formData })
-        .then(res => res.json())
-        .then(data => {
-          lastFilename = data.filename;
-          document.getElementById("preview").innerHTML = `<p>✅ ${data.message}</p><img src='/images/${data.filename}' alt='preview'>`;
-          updateUploadedList(data.filename);
-        })
-        .catch(err => alert("Upload failed"));
-    }
-
-    function updateUploadedList(filename) {
-  const container = document.getElementById("uploads");
-  const entry = document.createElement("div");
-  const img = new Image();
-  img.onload = () => {
-    entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick="deleteImage('${filename}', this)">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-  img.onerror = () => {
-    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick="deleteImage('${filename}', this)">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-  img.src = `/images/${filename}`;
-} (${img.naturalWidth}x${img.naturalHeight}) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-  img.onerror = () => {
-    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-  img.src = `/images/${filename}`;
-}`;
-  img.onload = () => {
-    entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-  img.onerror = () => {
-    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-}`;
-  img.onload = () => {
-    entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick="deleteImage('${filename}', this)">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-  img.onerror = () => {
-    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick="deleteImage('${filename}', this)">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-}`;
-  img.onload = () => {
-    entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-  img.onerror = () => {
-    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
-    container.appendChild(entry);
-  };
-} <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
-  container.appendChild(entry);
-}`;
-      container.appendChild(entry);
-    }
-
-    function runAnalysis() {
-      fetch(`${API_BASE}/analyze`, { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("preview").innerHTML = `<p>✅ ${data.message}</p>`;
-        })
-        .catch(err => alert("Analysis failed"));
-    }
-
-    function fetchReport() {
-      fetch(`${API_BASE}/report`)
-        .then(res => res.json())
-        .then(data => {
-          const flagged = data.reports.filter(r => r.flagged);
-          document.getElementById("report").innerHTML = `
-            <h2>📄 Report</h2>
-            <pre>${JSON.stringify(flagged, null, 2)}</pre>
-          `;
-        })
-        .catch(err => alert("Could not fetch report"));
-    }
-
-    function runOCR() {
-      if (!lastFilename) return alert("Upload an image first.");
-      document.getElementById("spinner").style.display = "block";
-
-      fetch(`${API_BASE}/ocr`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: lastFilename })
+    fetch(`${API_BASE}/upload`, { method: "POST", body: formData })
+      .then(res => res.json())
+      .then(data => {
+        lastFilename = data.filename;
+        document.getElementById("preview").innerHTML = `<p>✅ ${data.message}</p><img src='/images/${data.filename}' alt='preview'>`;
+        updateUploadedList(data.filename);
       })
-        .then(res => res.json())
-        .then(data => {
-          lastTaskId = data.task_id;
-          setTimeout(checkOCRStatus, 3000);
-        });
-    }
+      .catch(err => alert("Upload failed"));
+  }
 
-    function checkOCRStatus() {
-      if (!lastTaskId) return;
-      fetch(`${API_BASE}/ocr-status/${lastTaskId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === "success") {
-            document.getElementById("spinner").style.display = "none";
-            window.latestOCRText = data.result;
-            document.getElementById("report").innerHTML = `<h2>🔠 OCR Result</h2><pre>${data.result}</pre>`;
-          } else if (data.status === "pending") {
-            setTimeout(checkOCRStatus, 3000);
-          } else {
-            document.getElementById("spinner").style.display = "none";
-            document.getElementById("report").innerHTML = `<p>❌ OCR failed: ${data.error || data.status}</p>`;
-          }
-        });
-    }
+  function updateUploadedList(filename) {
+    const container = document.getElementById("uploads");
+    const entry = document.createElement("div");
+    const img = new Image();
+    img.onload = () => {
+      entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick="deleteImage('${filename}', this)">🗑 Delete</button>`;
+      container.appendChild(entry);
+    };
+    img.onerror = () => {
+      entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick="deleteImage('${filename}', this)">🗑 Delete</button>`;
+      container.appendChild(entry);
+    };
+    img.src = `/images/${filename}`;
+  }
 
-    function resetDashboard() {
-  document.getElementById("uploads").innerHTML = "";
-  document.getElementById("preview").innerHTML = "";
-  document.getElementById("report").innerHTML = "";
-  lastFilename = "";
-  lastTaskId = "";
-  window.latestOCRText = "";
-}
+  function runAnalysis() {
+    fetch(`${API_BASE}/analyze`, { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("preview").innerHTML = `<p>✅ ${data.message}</p>`;
+      })
+      .catch(err => alert("Analysis failed"));
+  }
 
-    function downloadOCR() {
-      const text = window.latestOCRText;
-      if (!text) return alert("No OCR result to download");
-      const blob = new Blob([text], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${lastFilename || 'ocr_result'}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-  function deleteImage(filename, btn) {
-  fetch(`${API_BASE}/delete-image/${filename}`, { method: "DELETE" })
-    .then(res => res.json())
-    .then(data => {
-      btn.parentElement.remove();
-      document.getElementById("preview").innerHTML = `<p>🗑️ ${data.message}</p>`;
+  function fetchReport() {
+    fetch(`${API_BASE}/report`)
+      .then(res => res.json())
+      .then(data => {
+        const flagged = data.reports.filter(r => r.flagged);
+        document.getElementById("report").innerHTML = `
+          <h2>📄 Report</h2>
+          <pre>${JSON.stringify(flagged, null, 2)}</pre>
+        `;
+      })
+      .catch(err => alert("Could not fetch report"));
+  }
+
+  function runOCR() {
+    if (!lastFilename) return alert("Upload an image first.");
+    document.getElementById("spinner").style.display = "block";
+
+    fetch(`${API_BASE}/ocr`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: lastFilename })
     })
-    .catch(() => alert("Failed to delete image"));
-}
+      .then(res => res.json())
+      .then(data => {
+        lastTaskId = data.task_id;
+        setTimeout(checkOCRStatus, 3000);
+      });
+  }
 
+  function checkOCRStatus() {
+    if (!lastTaskId) return;
+    fetch(`${API_BASE}/ocr-status/${lastTaskId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("spinner").style.display = "none";
+          window.latestOCRText = data.result;
+          document.getElementById("report").innerHTML = `<h2>🔠 OCR Result</h2><pre>${data.result}</pre>`;
+        } else if (data.status === "pending") {
+          setTimeout(checkOCRStatus, 3000);
+        } else {
+          document.getElementById("spinner").style.display = "none";
+          document.getElementById("report").innerHTML = `<p>❌ OCR failed: ${data.error || data.status}</p>`;
+        }
+      });
+  }
+
+  function resetDashboard() {
+    document.getElementById("uploads").innerHTML = "";
+    document.getElementById("preview").innerHTML = "";
+    document.getElementById("report").innerHTML = "";
+    lastFilename = "";
+    lastTaskId = "";
+    window.latestOCRText = "";
+  }
+
+  function downloadOCR() {
+    const text = window.latestOCRText;
+    if (!text) return alert("No OCR result to download");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${lastFilename || 'ocr_result'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function deleteImage(filename, btn) {
+    fetch(`${API_BASE}/delete-image/${filename}`, { method: "DELETE" })
+      .then(res => res.json())
+      .then(data => {
+        btn.parentElement.remove();
+        document.getElementById("preview").innerHTML = `<p>🗑️ ${data.message}</p>`;
+      })
+      .catch(() => alert("Failed to delete image"));
+  }
 </script>
 </body>
 </html>
