@@ -126,6 +126,6 @@ def process_directory(directory_path, output_report="forensic_reports.json"):
     }
 
     with open(output_report, "w") as f:
-        json.dump(output, f, indent=2)
+        json.dump(output, f, indent=2, default=str)
 
     print("✅ Done. Report saved to", output_report)
