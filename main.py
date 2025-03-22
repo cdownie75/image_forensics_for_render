@@ -68,7 +68,16 @@ HTML_UI = """
   const container = document.getElementById("uploads");
   const entry = document.createElement("div");
   const img = new Image();
+  img.onload = () => {
+    entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
+    container.appendChild(entry);
+  };
+  img.onerror = () => {
+    entry.innerHTML = `🖼️ ${filename} (dimensions unavailable) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
+    container.appendChild(entry);
+  };
   img.src = `/images/${filename}`;
+}`;
   img.onload = () => {
     entry.innerHTML = `🖼️ ${filename} (${img.naturalWidth}x${img.naturalHeight}) <button onclick=\"deleteImage('${filename}', this)\">🗑 Delete</button>`;
     container.appendChild(entry);
