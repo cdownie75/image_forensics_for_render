@@ -2,6 +2,6 @@ Flask
 pytesseract
 Pillow
 opencv-python
-openai
 tiktoken
 gunicorn
+openai==0.28.1
